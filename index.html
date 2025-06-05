@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gun Game</title>
+  <style>
+    html, body { margin: 0; overflow: hidden; }
+    canvas { background: #111; display: block; }
+    #ui {
+      position: absolute; top: 10px; left: 10px; color: white; font-family: sans-serif;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="score">Score: 0</div>
+  <div id="health">Health: 100</div>
+  <div id="wave">Wave: 1</div>
+</div>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const keys = {};
+const mouse = { x: canvas.width/2, y: canvas.height/2 };
+let bullets = [], enemies = [], score = 0, wave = 1;
+let player = {
+  x: canvas.width/2, y: canvas.height/2, size: 20, speed: 5, health: 100
+};
+
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+window.addEventListener("mousemove", e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
+});
+window.addEventListener("click", () => {
+  let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+  bullets.push({ x: player.x, y: player.y, dx: Math.cos(angle)*10, dy: Math.sin(angle)*10 });
+  shootSound.currentTime = 0;
+  shootSound.play();
+});
+
+const shootSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_8770a2d12c.mp3?filename=gunshot-108577.mp3");
+
+function spawnEnemies(count) {
+  for (let i = 0; i < count; i++) {
+    let x = Math.random() < 0.5 ? 0 : canvas.width;
+    let y = Math.random() * canvas.height;
+    enemies.push({ x, y, size: 25 + wave*2, speed: 1 + wave*0.2 });
+  }
+}
+
+function drawPlayer() {
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+  ctx.rotate(angle);
+  ctx.fillStyle = "lime";
+  ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+  ctx.fillStyle = "orange";
+  ctx.fillRect(player.size/2, -5, 20, 10); // gun barrel
+  ctx.restore();
+}
+
+function update() {
+  if (keys["w"]) player.y -= player.speed;
+  if (keys["s"]) player.y += player.speed;
+  if (keys["a"]) player.x -= player.speed;
+  if (keys["d"]) player.x += player.speed;
+
+  bullets.forEach((b, i) => {
+    b.x += b.dx; b.y += b.dy;
+    if (b.x < 0 || b.y < 0 || b.x > canvas.width || b.y > canvas.height)
+      bullets.splice(i, 1);
+  });
+
+  enemies.forEach((e, i) => {
+    let dx = player.x - e.x;
+    let dy = player.y - e.y;
+    let dist = Math.hypot(dx, dy);
+    e.x += (dx / dist) * e.speed;
+    e.y += (dy / dist) * e.speed;
+
+    // collision with player
+    if (dist < player.size + e.size) {
+      player.health -= 10;
+      enemies.splice(i, 1);
+      if (player.health <= 0) {
+        alert("Game Over! Final Score: " + score);
+        document.location.reload();
+      }
+    }
+
+    // collision with bullets
+    bullets.forEach((b, j) => {
+      if (Math.hypot(e.x - b.x, e.y - b.y) < e.size) {
+        enemies.splice(i, 1);
+        bullets.splice(j, 1);
+        score += 10;
+      }
+    });
+  });
+
+  // Spawn new wave
+  if (enemies.length === 0) {
+    wave++;
+    spawnEnemies(wave * 3);
+  }
+
+  // Update UI
+  document.getElementById("score").textContent = `Score: ${score}`;
+  document.getElementById("health").textContent = `Health: ${player.health}`;
+  document.getElementById("wave").textContent = `Wave: ${wave}`;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPlayer();
+  bullets.forEach(b => {
+    ctx.fillStyle = "yellow";
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 5, 0, Math.PI*2);
+    ctx.fill();
+  });
+  enemies.forEach(e => {
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.size, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+spawnEnemies(3);
+loop();
+</script>
+</body>
+</html>
