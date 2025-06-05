@@ -1,998 +1,335 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>Alien Shooter FPS - Mobile Controls & More</title>
-<style>
-  html, body {
-    margin: 0; padding: 0; overflow: hidden;
-    background: radial-gradient(ellipse at center, #000022 0%, #000000 80%);
-    color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #gameCanvas {
-    display: block; margin: 0 auto;
-    background: transparent;
-  }
-  #score, #wave, #highScore {
-    position: fixed; left: 20px; font-size: 18px; font-weight: bold; text-shadow: 0 0 4px black;
-  }
-  #score { top: 10px; }
-  #wave { top: 40px; }
-  #highScore { top: 70px; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Alien Shooter</title>
+  <style>
+    body, html {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: black;
+      color: white;
+    }
+    canvas {
+      background: #111;
+      display: block;
+    }
+    #score, #wave, #audioToggle, #pauseToggle {
+      position: absolute;
+      z-index: 2;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #score { top: 10px; left: 10px; }
+    #wave { top: 10px; right: 10px; }
+    #audioToggle { bottom: 10px; left: 10px; }
+    #pauseToggle { bottom: 10px; right: 10px; }
 
-  #healthBarContainer {
-    position: fixed; left: 20px; top: 100px; width: 200px; height: 20px;
-    background: #222; border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 0 6px #0f0 inset;
-  }
-  #healthBar {
-    height: 100%; background: limegreen;
-    width: 100%; transition: width 0.3s ease;
-  }
+    #healthBarContainer {
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      width: 200px;
+      height: 20px;
+      border: 2px solid white;
+      background: red;
+    }
 
-  /* Upgrade Overlay */
-  #upgradeOverlay {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.95);
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    z-index: 1000;
-  }
-  #upgradeOverlay h2 {
-    font-size: 2rem; margin-bottom: 1rem;
-  }
-  #upgradeOverlay button {
-    background: #222; color: white;
-    border: 2px solid limegreen; border-radius: 8px;
-    padding: 10px 20px; margin: 8px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.3s;
-  }
-  #upgradeOverlay button:hover {
-    background: limegreen;
-    color: black;
-    transform: scale(1.1);
-  }
+    #healthBar {
+      height: 100%;
+      width: 100%;
+      background: lime;
+    }
 
-  /* Mobile Controls */
-  #joystickBase {
-    position: fixed; bottom: 80px; left: 30px;
-    width: 100px; height: 100px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 50%;
-    touch-action: none;
-    z-index: 900;
-  }
-  #joystickStick {
-    position: absolute; top: 40px; left: 40px;
-    width: 20px; height: 20px;
-    background: rgba(0,255,0,0.8);
-    border-radius: 50%;
-    pointer-events: none;
-  }
+    #mobileControls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 2;
+    }
 
-  #fireButton {
-    position: fixed; bottom: 80px; right: 30px;
-    width: 80px; height: 80px;
-    background: rgba(255,0,0,0.6);
-    border-radius: 50%;
-    box-shadow: 0 0 12px 3px rgba(255,0,0,0.8);
-    touch-action: none;
-    z-index: 900;
-    user-select: none;
-    display: flex; justify-content: center; align-items: center;
-    font-weight: bold; font-size: 1.5rem; color: white;
-    cursor: pointer;
-  }
-  #fireButton:active {
-    background: rgba(255,0,0,0.9);
-    box-shadow: 0 0 20px 6px rgba(255,0,0,1);
-  }
+    #joystickBase, #joystickKnob {
+      position: absolute;
+      border-radius: 50%;
+      touch-action: none;
+    }
 
-  /* Game Over Screen */
-  #gameOverScreen {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.95);
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    color: white; font-size: 2rem;
-    z-index: 1001;
-  }
-  #gameOverScreen button {
-    margin-top: 20px;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    background: limegreen;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    color: black;
-    font-weight: bold;
-    transition: background-color 0.3s;
-  }
-  #gameOverScreen button:hover {
-    background: #00cc00;
-  }
+    #joystickBase {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.2);
+    }
 
-  /* Music toggle */
-  #musicToggle {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.6);
-    color: white;
-    border: 1px solid white;
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 14px;
-    cursor: pointer;
-    z-index: 900;
-  }
-</style>
+    #joystickKnob {
+      width: 40px;
+      height: 40px;
+      background: white;
+      top: 20px;
+      left: 20px;
+    }
+
+    #shootButton {
+      position: absolute;
+      right: -80px;
+      bottom: 0;
+      width: 60px;
+      height: 60px;
+      background: red;
+      color: white;
+      font-weight: bold;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 60px;
+      user-select: none;
+    }
+  </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="score">Score: 0</div>
+  <div id="wave">Wave: 1</div>
+  <div id="healthBarContainer"><div id="healthBar"></div></div>
+  <button id="audioToggle">Mute 🔈</button>
+  <button id="pauseToggle">Pause ⏸️</button>
+  <div id="mobileControls" style="display: none;">
+    <div id="joystickBase"></div>
+    <div id="joystickKnob"></div>
+    <div id="shootButton">Shoot</div>
+  </div>
+  <canvas id="gameCanvas"></canvas>
 
-<div id="score">Score: 0</div>
-<div id="wave">Wave: 1</div>
-<div id="highScore">High Score: 0</div>
-<div id="healthBarContainer"><div id="healthBar"></div></div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-<!-- Mobile Controls -->
-<div id="joystickBase" style="display:none;">
-  <div id="joystickStick"></div>
-</div>
-<div id="fireButton" style="display:none;">FIRE</div>
+    let score = 0;
+    let highScore = localStorage.getItem('alienHighScore') || 0;
+    let wave = 1;
+    let lives = 100;
+    let paused = false;
+    let isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
-<!-- Music Toggle -->
-<button id="musicToggle">Music: On</button>
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: 20,
+      color: 'white',
+      speed: 5,
+      dx: 0,
+      dy: 0,
+    };
 
-<!-- Game Over Screen -->
-<div id="gameOverScreen" style="display:none;">
-  <div id="gameOverText"></div>
-  <button id="retryBtn">Retry</button>
-</div>
+    const bullets = [];
+    const enemies = [];
+    const particles = [];
 
-<script>
-// ====== VARIABLES ======
+    const shootSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_0dd26742a5.mp3');
+    shootSound.volume = 0.3;
+    const bgMusic = new Audio('https://cdn.pixabay.com/audio/2023/03/29/audio_65b5b6bc8c.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.5;
+    bgMusic.play();
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-let width = canvas.width;
-let height = canvas.height;
-
-let isMobile = /Mobi|Android/i.test(navigator.userAgent);
-
-const scoreEl = document.getElementById("score");
-const waveEl = document.getElementById("wave");
-const highScoreEl = document.getElementById("highScore");
-const healthBar = document.getElementById("healthBar");
-const joystickBase = document.getElementById("joystickBase");
-const joystickStick = document.getElementById("joystickStick");
-const fireButton = document.getElementById("fireButton");
-const musicToggleBtn = document.getElementById("musicToggle");
-const gameOverScreen = document.getElementById("gameOverScreen");
-const gameOverText = document.getElementById("gameOverText");
-const retryBtn = document.getElementById("retryBtn");
-
-// Player and game state
-const player = {
-  x: width / 2,
-  y: height / 2,
-  size: 30,
-  speed: 4,
-  health: 100,
-  maxHealth: 100,
-  angle: 0,
-  shooting: false,
-  muzzleFlashTime: 0,
-};
-
-let bullets = [];
-let enemies = [];
-let particles = [];
-
-let score = 0;
-let wave = 1;
-let bossActive = false;
-let upgradePending = false;
-
-let bossAttackCooldown = 0;
-
-const upgrades = [
-  {
-    name: "Increase Fire Rate",
-    apply: () => { player.fireRate = Math.max(100, player.fireRate - 100); },
-  },
-  {
-    name: "Increase Damage",
-    apply: () => { player.damage += 5; },
-  },
-  {
-    name: "Increase Health",
-    apply: () => {
-      player.maxHealth += 20;
-      player.health = player.maxHealth;
-      updateHealthBar();
-    },
-  },
-];
-
-// Player stats (default)
-player.fireRate = 400; // ms between shots
-player.damage = 10;
-
-let lastShotTime = 0;
-
-// Movement control vars
-let moveX = 0;
-let moveY = 0;
-
-// Joystick control vars
-let joystickActive = false;
-let joystickStart = { x: 0, y: 0 };
-let joystickPos = { x: 0, y: 0 };
-
-// Sounds
-const gunshotSounds = [
-  new Audio("https://freesound.org/data/previews/341/341695_5121236-lq.mp3"),
-  new Audio("https://freesound.org/data/previews/420/420850_8386270-lq.mp3"),
-  new Audio("https://freesound.org/data/previews/26/26888_51512-lq.mp3"),
-];
-const bossAttackSound = new Audio("https://freesound.org/data/previews/235/235188_3987157-lq.mp3");
-const bossDeathSound = new Audio("https://freesound.org/data/previews/109/109662_945474-lq.mp3");
-const playerDeathSound = new Audio("https://freesound.org/data/previews/401/401051_5121236-lq.mp3");
-
-gunshotSounds.forEach(s => { s.volume = 0.2; });
-bossAttackSound.volume = 0.2;
-bossDeathSound.volume = 0.3;
-playerDeathSound.volume = 0.4;
-
-// Background music
-const bgMusic = new Audio("https://cdn.pixabay.com/download/audio/2022/02/16/audio_a6ef72e7ef.mp3?filename=retro-wave-11242.mp3");
-bgMusic.loop = true;
-bgMusic.volume = 0.15;
-let musicOn = true;
-
-// High score
-let highScore = localStorage.getItem("alienShooterHighScore") || 0;
-highScoreEl.textContent = "High Score: " + highScore;
-
-// ====== HELPERS ======
-
-function distance(x1, y1, x2, y2) {
-  return Math.hypot(x2 - x1, y2 - y1);
-}
-
-// Clamp a value between min and max
-function clamp(val, min, max) {
-  return Math.min(Math.max(val, min), max);
-}
-
-// ====== GAME FUNCTIONS ======
-
-function shoot() {
-  const now = Date.now();
-  if (now - lastShotTime < player.fireRate) return;
-  lastShotTime = now;
-
-  gunshotSounds[Math.floor(Math.random() * gunshotSounds.length)].play();
-
-  // Calculate bullet starting position (front of player)
-  const bulletX = player.x + Math.cos(player.angle) * player.size * 0.8;
-  const bulletY = player.y + Math.sin(player.angle) * player.size * 0.8;
-
-  bullets.push({
-    x: bulletX,
-    y: bulletY,
-    size: 6,
-    speed: 12,
-    angle: player.angle,
-    damage: player.damage,
-  });
-
-  player.muzzleFlashTime = 5;
-}
-
-function spawnEnemies(count) {
-  for (let i = 0; i < count; i++) {
-    let x, y;
-    // Spawn enemies at edges, randomly left/right or top/bottom
-    if (Math.random() < 0.5) {
-      // Spawn left or right
-      x = Math.random() < 0.5 ? -30 : width + 30;
-      y = Math.random() * height;
-    } else {
-      // Spawn top or bottom
-      x = Math.random() * width;
-      y = Math.random() < 0.5 ? -30 : height + 30;
-    }
-    enemies.push({
-      x,
-      y,
-      size: 15,
-      speed: 1.5 + wave * 0.2,
-      health: 20 + wave * 5,
-      maxHealth: 20 + wave * 5,
-      dying: false,
-      isBoss: false,
-    });
-  }
-}
-
-function spawnBoss() {
-  bossActive = true;
-  enemies.push({
-    x: width / 2,
-    y: 80,
-    size: 80,
-    speed: 3,
-    direction: 1,
-    health: 500 + wave * 100,
-    maxHealth: 500 + wave * 100,
-    dying: false,
-    isBoss: true,
-    attackInterval: 120,
-  });
-  bossAttackCooldown = 0;
-}
-
-// Particles for enemy death
-function createParticles(x, y, color, count = 20) {
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x,
-      y,
-      size: Math.random() * 3 + 1,
-      speedX: (Math.random() - 0.5) * 5,
-      speedY: (Math.random() - 0.5) * 5,
-      life: 30 + Math.random() * 20,
-      color,
-    });
-  }
-}
-
-function updateParticles() {
-  for (let i = particles.length - 1; i >= 0; i--) {
-    let p = particles[i];
-    p.x += p.speedX;
-    p.y += p.speedY;
-    p.life--;
-    p.size *= 0.95;
-    if (p.life <= 0 || p.size <= 0.2) {
-      particles.splice(i, 1);
-    }
-  }
-}
-
-function drawParticles() {
-  particles.forEach(p => {
-    ctx.beginPath();
-    ctx.fillStyle = p.color;
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = 8;
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  });
-}
-
-// ====== INPUT HANDLING ======
-
-// Mouse move controls player angle (desktop)
-canvas.addEventListener("mousemove", (e) => {
-  if (isMobile) return;
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
-});
-
-// Mouse click to shoot (desktop)
-canvas.addEventListener("mousedown", (e) => {
-  if (isMobile) return;
-  player.shooting = true;
-  shoot();
-});
-canvas.addEventListener("mouseup", (e) => {
-  if (isMobile) return;
-  player.shooting = false;
-});
-
-// Keyboard controls for desktop movement
-const keys = {};
-window.addEventListener("keydown", (e) => {
-  if (isMobile) return;
-  keys[e.key.toLowerCase()] = true;
-});
-window.addEventListener("keyup", (e) => {
-  if (isMobile) return;
-  keys[e.key.toLowerCase()] = false;
-});
-
-// Auto-shoot while mouse down on desktop
-function desktopShooting() {
-  if (player.shooting) {
-    shoot();
-  }
-}
-
-// ====== MOBILE TOUCH CONTROLS ======
-
-function setupMobileControls() {
-  joystickBase.style.display = "block";
-  fireButton.style.display = "flex";
-
-  // Joystick touch start
-  joystickBase.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    joystickActive = true;
-    const rect = joystickBase.getBoundingClientRect();
-    const touch = e.targetTouches[0];
-    joystickStart.x = touch.clientX;
-    joystickStart.y = touch.clientY;
-    joystickPos.x = 0;
-    joystickPos.y = 0;
-    joystickStick.style.left = "40px";
-    joystickStick.style.top = "40px";
-  });
-
-  // Joystick touch move
-  joystickBase.addEventListener("touchmove", (e) => {
-    if (!joystickActive) return;
-    e.preventDefault();
-    const rect = joystickBase.getBoundingClientRect();
-    const touch = e.targetTouches[0];
-    let dx = touch.clientX - rect.left - 50;
-    let dy = touch.clientY - rect.top - 50;
-
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const maxDist = 40;
-
-    if (dist > maxDist) {
-      dx = (dx / dist) * maxDist;
-      dy = (dy / dist) * maxDist;
-    }
-
-    joystickPos.x = dx / maxDist;
-    joystickPos.y = dy / maxDist;
-
-    joystickStick.style.left = 40 + dx + "px";
-    joystickStick.style.top = 40 + dy + "px";
-  });
-
-  // Joystick touch end
-  joystickBase.addEventListener("touchend", (e) => {
-    joystickActive = false;
-    joystickPos.x = 0;
-    joystickPos.y = 0;
-    joystickStick.style.left = "40px";
-    joystickStick.style.top = "40px";
-  });
-  joystickBase.addEventListener("touchcancel", (e) => {
-    joystickActive = false;
-    joystickPos.x = 0;
-    joystickPos.y = 0;
-    joystickStick.style.left = "40px";
-    joystickStick.style.top = "40px";
-  });
-
-  // Fire button touch handlers
-  fireButton.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    player.shooting = true;
-    shoot();
-  });
-  fireButton.addEventListener("touchend", (e) => {
-    e.preventDefault();
-    player.shooting = false;
-  });
-}
-
-// ====== UPDATE & DRAW ======
-
-function update() {
-  // Handle movement
-
-  if (isMobile) {
-    // Mobile: move by joystick
-    moveX = joystickPos.x;
-    moveY = joystickPos.y;
-  } else {
-    // Desktop keyboard WASD
-    moveX = 0; moveY = 0;
-    if (keys["w"]) moveY -= 1;
-    if (keys["s"]) moveY += 1;
-    if (keys["a"]) moveX -= 1;
-    if (keys["d"]) moveX += 1;
-    if (moveX !== 0 || moveY !== 0) {
-      const len = Math.sqrt(moveX * moveX + moveY * moveY);
-      moveX /= len;
-      moveY /= len;
-    }
-  }
-
-  player.x += moveX * player.speed;
-  player.y += moveY * player.speed;
-
-  player.x = clamp(player.x, player.size / 2, width - player.size / 2);
-  player.y = clamp(player.y, player.size / 2, height - player.size / 2);
-
-  if (!isMobile) desktopShooting();
-
-  // Update bullets
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    let b = bullets[i];
-    b.x += Math.cos(b.angle) * b.speed;
-    b.y += Math.sin(b.angle) * b.speed;
-
-    // Remove bullet if out of bounds
-    if (b.x < 0 || b.x > width || b.y < 0 || b.y > height) {
-      bullets.splice(i, 1);
-      continue;
-    }
-
-    // Check collision with enemies
-    for (let j = enemies.length - 1; j >= 0; j--) {
-      let e = enemies[j];
-      if (e.dying) continue;
-      let dist = distance(b.x, b.y, e.x, e.y);
-      if (dist < b.size + e.size) {
-        e.health -= b.damage;
-        bullets.splice(i, 1);
-        if (e.health <= 0) {
-          e.dying = true;
-          if (e.isBoss) {
-            bossDeathSound.play();
-          }
-          createParticles(e.x, e.y, e.isBoss ? "orange" : "red", e.isBoss ? 100 : 20);
-          score += e.isBoss ? 500 : 10;
-          updateScore();
-
-          if (e.isBoss) {
-            bossActive = false;
-            upgradePending = true;
-          }
-
-          enemies.splice(j, 1);
-        }
-        break;
+    document.getElementById('audioToggle').onclick = () => {
+      if (bgMusic.paused) {
+        bgMusic.play();
+        audioToggle.textContent = 'Mute 🔈';
+      } else {
+        bgMusic.pause();
+        audioToggle.textContent = 'Unmute 🔇';
       }
+    };
+
+    document.getElementById('pauseToggle').onclick = () => {
+      paused = !paused;
+      pauseToggle.textContent = paused ? 'Resume ▶️' : 'Pause ⏸️';
+    };
+
+    function spawnEnemy() {
+      const radius = 20;
+      const x = Math.random() < 0.5 ? 0 - radius : canvas.width + radius;
+      const y = Math.random() * canvas.height;
+      const angle = Math.atan2(player.y - y, player.x - x);
+      const speed = 2 + wave * 0.5;
+      enemies.push({
+        x, y, radius, color: 'lime',
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed
+      });
     }
-  }
 
-  // Update enemies
-  enemies.forEach((e) => {
-    if (e.dying) return;
-    // Move toward player
-    const dx = player.x - e.x;
-    const dy = player.y - e.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // Boss has special movement
-    if (e.isBoss) {
-      e.x += e.speed * e.direction;
-      if (e.x > width - e.size || e.x < e.size) e.direction *= -1;
-
-      // Boss attack
-      bossAttackCooldown--;
-      if (bossAttackCooldown <= 0) {
-        bossAttackCooldown = e.attackInterval;
-        bossAttackSound.play();
-        // Shoot a bullet toward player
-        const angle = Math.atan2(player.y - e.y, player.x - e.x);
-        bullets.push({
-          x: e.x,
-          y: e.y,
-          size: 15,
-          speed: 10,
-          angle: angle,
-          damage: 20,
-          isEnemyBullet: true,
+    function createParticles(x, y) {
+      for (let i = 0; i < 8; i++) {
+        particles.push({
+          x, y,
+          dx: Math.random() * 4 - 2,
+          dy: Math.random() * 4 - 2,
+          radius: 2 + Math.random() * 2,
+          life: 60
         });
       }
-      return;
     }
 
-    if (dist > 0) {
-      e.x += (dx / dist) * e.speed;
-      e.y += (dy / dist) * e.speed;
+    function shootBullet(targetX, targetY) {
+      const angle = Math.atan2(targetY - player.y, targetX - player.x);
+      bullets.push({
+        x: player.x,
+        y: player.y,
+        dx: Math.cos(angle) * 10,
+        dy: Math.sin(angle) * 10,
+        radius: 5
+      });
+      shootSound.currentTime = 0;
+      shootSound.play();
     }
 
-    // Check collision with player
-    if (dist < e.size + player.size / 2) {
-      e.dying = true;
-      createParticles(e.x, e.y, "red", 20);
-      player.health -= 15;
-      updateHealthBar();
-      if (player.health <= 0) {
-        playerDeathSound.play();
-        gameOver();
+    function update() {
+      if (paused) return;
+
+      player.x += player.dx;
+      player.y += player.dy;
+
+      bullets.forEach((b, i) => {
+        b.x += b.dx;
+        b.y += b.dy;
+        if (b.x < 0 || b.y < 0 || b.x > canvas.width || b.y > canvas.height)
+          bullets.splice(i, 1);
+      });
+
+      enemies.forEach((e, i) => {
+        e.x += e.dx;
+        e.y += e.dy;
+        const dist = Math.hypot(player.x - e.x, player.y - e.y);
+        if (dist < player.radius + e.radius) {
+          lives -= 10;
+          enemies.splice(i, 1);
+        }
+        bullets.forEach((b, j) => {
+          if (Math.hypot(b.x - e.x, b.y - e.y) < b.radius + e.radius) {
+            score += 10;
+            createParticles(e.x, e.y);
+            bullets.splice(j, 1);
+            enemies.splice(i, 1);
+          }
+        });
+      });
+
+      particles.forEach((p, i) => {
+        p.x += p.dx;
+        p.y += p.dy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      });
+
+      if (enemies.length < wave * 3) {
+        spawnEnemy();
       }
-      enemies.splice(enemies.indexOf(e), 1);
-    }
-  });
 
-  // Enemy bullets hit player
-  bullets.forEach((b, i) => {
-    if (!b.isEnemyBullet) return;
-    const dist = distance(b.x, b.y, player.x, player.y);
-    if (dist < b.size + player.size / 2) {
-      bullets.splice(i, 1);
-      player.health -= 25;
-      updateHealthBar();
-      if (player.health <= 0) {
-        playerDeathSound.play();
-        gameOver();
+      if (lives <= 0) {
+        alert(`Game Over! Final Score: ${score}`);
+        highScore = Math.max(highScore, score);
+        localStorage.setItem('alienHighScore', highScore);
+        location.reload();
       }
     }
-  });
 
-  // Update particles
-  updateParticles();
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Upgrade trigger
-  if (enemies.length === 0 && !bossActive && !upgradePending) {
-    if (wave % 5 === 0) {
-      spawnBoss();
-    } else {
-      wave++;
-      waveEl.textContent = "Wave: " + wave;
-      spawnEnemies(wave + 2);
-    }
-  }
-}
-
-function updateScore() {
-  scoreEl.textContent = "Score: " + score;
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem("alienShooterHighScore", highScore);
-    highScoreEl.textContent = "High Score: " + highScore;
-  }
-}
-
-function updateHealthBar() {
-  const percent = (player.health / player.maxHealth) * 100;
-  healthBar.style.width = percent + "%";
-  if (percent > 50) {
-    healthBar.style.backgroundColor = "limegreen";
-  } else if (percent > 20) {
-    healthBar.style.backgroundColor = "orange";
-  } else {
-    healthBar.style.backgroundColor = "red";
-  }
-}
-
-function drawPlayer() {
-  ctx.save();
-  ctx.translate(player.x, player.y);
-  ctx.rotate(player.angle);
-  // Draw player as triangle
-  ctx.fillStyle = "white";
-  ctx.beginPath();
-  ctx.moveTo(player.size / 2, 0);
-  ctx.lineTo(-player.size / 2, player.size / 3);
-  ctx.lineTo(-player.size / 2, -player.size / 3);
-  ctx.closePath();
-  ctx.fill();
-
-  // Muzzle flash
-  if (player.muzzleFlashTime > 0) {
-    ctx.fillStyle = "orange";
-    ctx.beginPath();
-    ctx.arc(player.size / 2 + 5, 0, 8, 0, Math.PI * 2);
-    ctx.fill();
-    player.muzzleFlashTime--;
-  }
-
-  ctx.restore();
-}
-
-function drawBullets() {
-  bullets.forEach(b => {
-    ctx.save();
-    ctx.translate(b.x, b.y);
-    ctx.fillStyle = b.isEnemyBullet ? "red" : "yellow";
-    ctx.shadowColor = b.isEnemyBullet ? "red" : "yellow";
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(0, 0, b.size, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.shadowBlur = 0;
-  });
-}
-
-function drawEnemies() {
-  enemies.forEach(e => {
-    ctx.save();
-    ctx.translate(e.x, e.y);
-
-    // Boss glowy orange circle
-    if (e.isBoss) {
-      ctx.fillStyle = "orange";
-      ctx.shadowColor = "orange";
-      ctx.shadowBlur = 20;
+      // Player
       ctx.beginPath();
-      ctx.arc(0, 0, e.size, 0, Math.PI * 2);
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = player.color;
       ctx.fill();
+
+      // Bullets
+      bullets.forEach(b => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'yellow';
+        ctx.fill();
+      });
+
+      // Enemies
+      enemies.forEach(e => {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+      });
+
+      // Particles
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+      });
+
+      document.getElementById('score').textContent = `Score: ${score} | High: ${highScore}`;
+      document.getElementById('wave').textContent = `Wave: ${wave}`;
+      document.getElementById('healthBar').style.width = `${lives}%`;
     }
 
-    ctx.fillStyle = e.isBoss ? "darkorange" : "red";
-    ctx.beginPath();
-    ctx.arc(0, 0, e.size, 0, Math.PI * 2);
-    ctx.fill();
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
 
-    // Health bar above enemy
-    ctx.fillStyle = "black";
-    ctx.fillRect(-e.size, -e.size - 10, e.size * 2, 5);
-    ctx.fillStyle = "limegreen";
-    ctx.fillRect(-e.size, -e.size - 10, (e.health / e.maxHealth) * e.size * 2, 5);
-
-    ctx.restore();
-  });
-}
-
-function draw() {
-  ctx.clearRect(0, 0, width, height);
-
-  // Draw background stars
-  for (let i = 0; i < 60; i++) {
-    ctx.fillStyle = "white";
-    const sx = Math.random() * width;
-    const sy = Math.random() * height;
-    ctx.fillRect(sx, sy, 1, 1);
-  }
-
-  drawParticles();
-  drawBullets();
-  drawEnemies();
-  drawPlayer();
-}
-
-function gameOver() {
-  gameOverScreen.style.display = "flex";
-  gameOverText.textContent = `Game Over!\nScore: ${score}\nHigh Score: ${highScore}`;
-  // Stop game loop
-  running = false;
-}
-
-// Restart game
-retryBtn.addEventListener("click", () => {
-  resetGame();
-});
-
-function resetGame() {
-  gameOverScreen.style.display = "none";
-  score = 0;
-  wave = 1;
-  player.health = player.maxHealth;
-  player.x = width / 2;
-  player.y = height / 2;
-  bullets = [];
-  enemies = [];
-  particles = [];
-  updateScore();
-  waveEl.textContent = "Wave: " + wave;
-  updateHealthBar();
-  spawnEnemies(wave + 2);
-  running = true;
-  upgradePending = false;
-  gameLoop();
-}
-
-// Upgrade selection screen
-function showUpgradeOptions() {
-  upgradePending = true;
-  let upgradeOverlay = document.createElement("div");
-  upgradeOverlay.id = "upgradeOverlay";
-
-  let title = document.createElement("h2");
-  title.textContent = "Choose an Upgrade";
-
-  upgradeOverlay.appendChild(title);
-
-  upgrades.forEach((upgrade, idx) => {
-    let btn = document.createElement("button");
-    btn.textContent = upgrade.name;
-    btn.addEventListener("click", () => {
-      applyUpgrade(idx);
-      document.body.removeChild(upgradeOverlay);
-      upgradePending = false;
-      if (!bossActive) {
-        wave++;
-        waveEl.textContent = "Wave: " + wave;
-        spawnEnemies(wave + 2);
-      }
+    // Controls
+    window.addEventListener('keydown', e => {
+      if (e.key === 'w') player.dy = -player.speed;
+      if (e.key === 's') player.dy = player.speed;
+      if (e.key === 'a') player.dx = -player.speed;
+      if (e.key === 'd') player.dx = player.speed;
     });
-    upgradeOverlay.appendChild(btn);
-  });
 
-  document.body.appendChild(upgradeOverlay);
-}
+    window.addEventListener('keyup', e => {
+      if (['w', 's'].includes(e.key)) player.dy = 0;
+      if (['a', 'd'].includes(e.key)) player.dx = 0;
+    });
 
-// Apply upgrade effect
-function applyUpgrade(idx) {
-  const upgrade = upgrades[idx];
-  switch (upgrade.type) {
-    case "damage":
-      player.damage += upgrade.amount;
-      break;
-    case "speed":
-      player.speed += upgrade.amount;
-      break;
-    case "health":
-      player.maxHealth += upgrade.amount;
-      player.health = player.maxHealth;
-      updateHealthBar();
-      break;
-    case "fireRate":
-      player.fireRate = Math.max(100, player.fireRate - upgrade.amount);
-      break;
-  }
-}
+    canvas.addEventListener('click', e => {
+      shootBullet(e.clientX, e.clientY);
+    });
 
-let upgrades = [
-  { name: "Increase Damage", type: "damage", amount: 5 },
-  { name: "Increase Speed", type: "speed", amount: 1 },
-  { name: "Increase Max Health", type: "health", amount: 20 },
-  { name: "Increase Fire Rate", type: "fireRate", amount: 50 },
-];
+    // Mobile
+    if (isMobile) {
+      document.getElementById('mobileControls').style.display = 'block';
+      let joystick = document.getElementById('joystickKnob');
+      let base = document.getElementById('joystickBase');
+      let originX, originY;
 
-// Joystick for mobile controls
-let joystick = null;
-let joystickPos = { x: 0, y: 0 };
-let joystickActive = false;
+      base.addEventListener('touchstart', e => {
+        originX = e.touches[0].clientX;
+        originY = e.touches[0].clientY;
+      });
 
-function setupJoystick() {
-  joystick = document.createElement("div");
-  joystick.id = "joystick";
-  joystick.style.position = "fixed";
-  joystick.style.bottom = "60px";
-  joystick.style.left = "60px";
-  joystick.style.width = "100px";
-  joystick.style.height = "100px";
-  joystick.style.background = "rgba(255,255,255,0.2)";
-  joystick.style.borderRadius = "50%";
-  joystick.style.touchAction = "none";
-  joystick.style.zIndex = 1000;
-  document.body.appendChild(joystick);
+      base.addEventListener('touchmove', e => {
+        let dx = e.touches[0].clientX - originX;
+        let dy = e.touches[0].clientY - originY;
+        player.dx = dx / 30;
+        player.dy = dy / 30;
+        joystick.style.left = `${20 + dx / 2}px`;
+        joystick.style.top = `${20 + dy / 2}px`;
+      });
 
-  let knob = document.createElement("div");
-  knob.id = "knob";
-  knob.style.position = "absolute";
-  knob.style.width = "50px";
-  knob.style.height = "50px";
-  knob.style.background = "rgba(255,255,255,0.8)";
-  knob.style.borderRadius = "50%";
-  knob.style.top = "25px";
-  knob.style.left = "25px";
-  knob.style.transition = "top 0.1s, left 0.1s";
-  joystick.appendChild(knob);
+      base.addEventListener('touchend', () => {
+        player.dx = player.dy = 0;
+        joystick.style.left = '20px';
+        joystick.style.top = '20px';
+      });
 
-  joystick.addEventListener("touchstart", (e) => {
-    joystickActive = true;
-    e.preventDefault();
-  });
-
-  joystick.addEventListener("touchmove", (e) => {
-    if (!joystickActive) return;
-    const touch = e.touches[0];
-    const rect = joystick.getBoundingClientRect();
-    let dx = touch.clientX - (rect.left + rect.width / 2);
-    let dy = touch.clientY - (rect.top + rect.height / 2);
-
-    const maxDist = rect.width / 2;
-    const dist = Math.min(Math.sqrt(dx * dx + dy * dy), maxDist);
-    const angle = Math.atan2(dy, dx);
-
-    dx = Math.cos(angle) * dist;
-    dy = Math.sin(angle) * dist;
-
-    joystickPos.x = dx / maxDist;
-    joystickPos.y = dy / maxDist;
-
-    let knob = joystick.querySelector("#knob");
-    knob.style.left = 25 + dx + "px";
-    knob.style.top = 25 + dy + "px";
-
-    e.preventDefault();
-  });
-
-  joystick.addEventListener("touchend", (e) => {
-    joystickActive = false;
-    joystickPos.x = 0;
-    joystickPos.y = 0;
-    let knob = joystick.querySelector("#knob");
-    knob.style.left = "25px";
-    knob.style.top = "25px";
-    e.preventDefault();
-  });
-}
-
-// Touch screen shooting button
-function setupShootButton() {
-  let shootBtn = document.createElement("button");
-  shootBtn.id = "shootBtn";
-  shootBtn.textContent = "Shoot";
-  shootBtn.style.position = "fixed";
-  shootBtn.style.bottom = "60px";
-  shootBtn.style.right = "60px";
-  shootBtn.style.width = "80px";
-  shootBtn.style.height = "80px";
-  shootBtn.style.borderRadius = "50%";
-  shootBtn.style.fontSize = "18px";
-  shootBtn.style.background = "rgba(255, 69, 0, 0.7)";
-  shootBtn.style.color = "white";
-  shootBtn.style.border = "none";
-  shootBtn.style.zIndex = 1000;
-  shootBtn.style.touchAction = "none";
-  document.body.appendChild(shootBtn);
-
-  let shooting = false;
-
-  shootBtn.addEventListener("touchstart", (e) => {
-    shooting = true;
-    e.preventDefault();
-  });
-  shootBtn.addEventListener("touchend", (e) => {
-    shooting = false;
-    e.preventDefault();
-  });
-
-  return () => shooting;
-}
-
-// Main game loop with shooting handling for mobile
-let isMobile = /Mobi|Android/i.test(navigator.userAgent);
-let getShooting = null;
-
-function gameLoop() {
-  if (!running) return;
-
-  update();
-  draw();
-
-  if (isMobile) {
-    if (getShooting && getShooting()) {
-      shoot();
+      document.getElementById('shootButton').addEventListener('touchstart', () => {
+        shootBullet(player.x + 1, player.y); // shoot forward
+      });
     }
-  }
 
-  requestAnimationFrame(gameLoop);
-}
-
-function init() {
-  if (isMobile) {
-    setupJoystick();
-    getShooting = setupShootButton();
-  }
-  updateScore();
-  updateHealthBar();
-  spawnEnemies(wave + 2);
-  gameLoop();
-}
-
-init();Here’s a concise summary of your upgraded alien shooter mini-game with these features integrated:
-
-- Player moves via WASD (desktop) or joystick (mobile).
-- Player shoots toward mouse (desktop) or via a shoot button (mobile).
-- Enemies move toward the player; bosses move side to side and shoot bullets.
-- Bullets (player and enemy) collide with enemies or player.
-- Health bars for player and enemies.
-- Score and high score saved in localStorage.
-- Particle effects on hits and deaths.
-- Waves spawn normally, every 5th wave spawns a boss.
-- After boss defeat, upgrade selection screen pops up with 4 upgrade options.
-- Player can choose upgrades to improve damage, speed, max health, or fire rate.
-- Touch joystick and shoot button appear on mobile.
-- Muzzle flash effect on shooting.
-- Sound effects on boss death, player death, boss shooting.
-
-If you want me to, I can help you package this entire working game code into a single HTML file or split it for easier editing, or add new features like multiple weapons, character select screen, or even save/load upgrades persistently. Just ask!
+    gameLoop();
+  </script>
+</body>
+</html>
